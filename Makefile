@@ -1,4 +1,4 @@
-.PHONY: help tf-init tf-plan tf-show tf-output tf-apply tf-validate tf-format tf-lint-fix
+.PHONY: help tf-init tf-plan tf-show tf-output tf-apply tf-validate tf-format tf-lint-fix tf-providers-lock
 
 TF_DIR := src/tf
 ENVRC := $(CURDIR)/.envrc
@@ -14,6 +14,7 @@ help:
 	@echo "  Validate:          make tf-validate"
 	@echo "  Format check:      make tf-format"
 	@echo "  Format fix:        make tf-lint-fix"
+	@echo "  Providers lock:    make tf-providers-lock"
 
 tf-init:
 	@source "$(ENVRC)" && cd $(TF_DIR) && tofu init $(ARGS)
@@ -38,3 +39,12 @@ tf-format:
 
 tf-lint-fix:
 	@cd $(TF_DIR) && tofu fmt -recursive
+
+tf-providers-lock:
+	@source "$(ENVRC)" && cd $(TF_DIR) && tofu providers lock \
+		-platform=darwin_amd64 \
+		-platform=darwin_arm64 \
+		-platform=linux_amd64 \
+		-platform=linux_arm64 \
+		-platform=windows_amd64 \
+		-platform=windows_arm64
