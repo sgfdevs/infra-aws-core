@@ -1,15 +1,9 @@
-output "backend_bucket_names" {
-  description = "S3 bucket names for OpenTofu state by environment key."
-  value = merge(
-    { for key, bucket in aws_s3_bucket.tfstate : key => bucket.bucket },
-    { state = aws_s3_bucket.tfstate_state.bucket }
-  )
+output "backend_bucket_name" {
+  description = "S3 bucket name for OpenTofu state storage."
+  value       = aws_s3_bucket.tfstate_state.bucket
 }
 
-output "backend_table_names" {
-  description = "DynamoDB table names for state locking by environment key."
-  value = merge(
-    { for key, table in aws_dynamodb_table.tflock : key => table.name },
-    { state = aws_dynamodb_table.tflock_state.name }
-  )
+output "backend_table_name" {
+  description = "DynamoDB table name for state locking."
+  value       = aws_dynamodb_table.tflock_state.name
 }

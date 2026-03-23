@@ -1,33 +1,3 @@
-moved {
-  from = aws_s3_bucket.tfstate["state"]
-  to   = aws_s3_bucket.tfstate_state
-}
-
-moved {
-  from = aws_s3_bucket_versioning.tfstate["state"]
-  to   = aws_s3_bucket_versioning.tfstate_state
-}
-
-moved {
-  from = aws_s3_bucket_server_side_encryption_configuration.tfstate["state"]
-  to   = aws_s3_bucket_server_side_encryption_configuration.tfstate_state
-}
-
-moved {
-  from = aws_s3_bucket_public_access_block.tfstate["state"]
-  to   = aws_s3_bucket_public_access_block.tfstate_state
-}
-
-moved {
-  from = aws_s3_bucket_ownership_controls.tfstate["state"]
-  to   = aws_s3_bucket_ownership_controls.tfstate_state
-}
-
-moved {
-  from = aws_dynamodb_table.tflock["state"]
-  to   = aws_dynamodb_table.tflock_state
-}
-
 locals {
   backends = {
     global = {
