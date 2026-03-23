@@ -1,5 +1,10 @@
 locals {
   backends = {
+    state = {
+      bucket_name = "sgfdevs-infra-tf-state"
+      table_name  = "sgfdevs-infra-tflock"
+      environment = "global"
+    }
     global = {
       bucket_name = "sgfdevs-global-tfstate"
       table_name  = "sgfdevs-global-tflock"
