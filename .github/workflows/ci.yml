@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  pull_request:
+    paths:
+      - src/tf/**
+      - .github/workflows/**
+  push:
+    branches:
+      - main
+    paths:
+      - src/tf/**
+      - .github/workflows/**
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  validate:
+    uses: glitchedmob/infra-gha/.github/workflows/tf-validate.yml@v0.6.6
+    with:
+      init-backend: false
