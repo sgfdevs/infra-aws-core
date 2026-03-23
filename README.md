@@ -8,8 +8,8 @@ OpenTofu configuration for SGF Devs global AWS bootstrap resources. This is a lo
 
 The stack includes:
 
-- S3 bucket `sgfdevs-global-tfstate` for remote state storage
-- DynamoDB table `sgfdevs-global-tflock` for state locking
+- S3 bucket `sgfdevs-infra-tf-state` for remote state storage
+- DynamoDB table `sgfdevs-infra-tflock` for state locking
 - AWS Identity Center groups, permission sets, and account assignments
 
 ## Usage
