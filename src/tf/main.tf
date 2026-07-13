@@ -183,6 +183,17 @@ resource "aws_iam_role_policy" "github_actions_terraform_ssm" {
       {
         Effect = "Allow"
         Action = [
+          "ssm:GetParameter",
+          "ssm:GetParameters"
+        ]
+        Resource = [
+          "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.sgfdevs_vms.account_id}:parameter${local.sgfdevs_vms_eso_access_key_id_path}",
+          "arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.sgfdevs_vms.account_id}:parameter${local.sgfdevs_vms_eso_secret_access_key_path}"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
           "ssm:DescribeParameters"
         ]
         Resource = "*"
