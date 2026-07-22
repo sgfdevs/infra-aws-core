@@ -202,3 +202,22 @@ resource "aws_iam_role_policy" "github_actions_terraform_ssm" {
     ]
   })
 }
+
+resource "aws_iam_role_policy" "github_actions_terraform_ses" {
+  name = "SESEmailIdentityReadPolicy"
+  role = aws_iam_role.github_actions_terraform.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ses:GetEmailIdentity",
+          "ses:ListTagsForResource"
+        ]
+        Resource = [for identity in aws_sesv2_email_identity.domain : identity.arn]
+      }
+    ]
+  })
+}
