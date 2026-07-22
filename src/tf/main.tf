@@ -104,9 +104,9 @@ resource "aws_iam_role" "github_actions_terraform" {
         Condition = {
           StringLike = {
             "token.actions.githubusercontent.com:sub" = [
-              "repo:sgfdevs/infra-vm-workloads:*",
-              "repo:sgfdevs/infra-dns:*",
-              "repo:sgfdevs/infra-app-config:*"
+              "repo:sgfdevs@53604170/infra-vm-workloads@1189754282:*",
+              "repo:sgfdevs@53604170/infra-dns@1191039220:*",
+              "repo:sgfdevs@53604170/infra-app-config@1298907442:*"
             ]
           }
           StringEquals = {
