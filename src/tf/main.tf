@@ -209,3 +209,161 @@ resource "aws_iam_role_policy" "github_actions_terraform_ses" {
     ]
   })
 }
+
+locals {
+  application_ses_senders = {
+    methodconf = {
+      application = "methodconf.com"
+      domain      = "methodconf.com"
+      path        = "methodconf"
+      policy_name = "MethodConfSESSender"
+    }
+    sgf_dev = {
+      application = "sgf.dev"
+      domain      = "sgf.dev"
+      path        = "sgf-dev"
+      policy_name = "SgfDevSESSender"
+    }
+  }
+  application_ses_policy_arns = {
+    for key, application in local.application_ses_senders :
+    key => "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/applications/${application.path}/${application.policy_name}"
+  }
+}
+
+resource "aws_iam_policy" "application_ses_sender" {
+  for_each = local.application_ses_senders
+
+  name        = each.value.policy_name
+  path        = "/applications/${each.value.path}/"
+  description = "Allow ${each.value.application} applications to send email from their tagged address"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ses:SendEmail",
+          "ses:SendRawEmail"
+        ]
+        Resource = aws_sesv2_email_identity.domain[each.value.domain].arn
+        Condition = {
+          StringEquals = {
+            "ses:FromAddress" = "$${aws:PrincipalTag/SESFromAddress}"
+          }
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "github_actions_terraform_application_ses_iam" {
+  name = "ApplicationSESCredentialAccessPolicy"
+  role = aws_iam_role.github_actions_terraform.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = concat(
+      [for key, application in local.application_ses_senders : {
+        Sid      = "Create${replace(title(key), "_", "")}SESUsers"
+        Effect   = "Allow"
+        Action   = "iam:CreateUser"
+        Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/applications/${application.path}/*"
+        Condition = {
+          StringEquals = {
+            "aws:RequestTag/Application" = application.application
+            "aws:RequestTag/ManagedBy"   = "OpenTofu"
+          }
+          StringLike = {
+            "aws:RequestTag/SESFromAddress" = "*@${application.domain}"
+          }
+          "ForAllValues:StringEquals" = {
+            "aws:TagKeys" = [
+              "Application",
+              "Environment",
+              "ManagedBy",
+              "SESFromAddress",
+            ]
+          }
+        }
+      }],
+      [for key, application in local.application_ses_senders : {
+        Sid    = "AttachOnly${replace(title(key), "_", "")}SESPolicy"
+        Effect = "Allow"
+        Action = [
+          "iam:AttachUserPolicy",
+          "iam:DetachUserPolicy"
+        ]
+        Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/applications/${application.path}/*"
+        Condition = {
+          ArnEquals = {
+            "iam:PolicyARN" = local.application_ses_policy_arns[key]
+          }
+          StringEquals = {
+            "iam:ResourceTag/Application" = application.application
+            "iam:ResourceTag/ManagedBy"   = "OpenTofu"
+          }
+          StringLike = {
+            "iam:ResourceTag/SESFromAddress" = "*@${application.domain}"
+          }
+        }
+      }],
+      [for key, application in local.application_ses_senders : {
+        Sid    = "Manage${replace(title(key), "_", "")}SESUsers"
+        Effect = "Allow"
+        Action = [
+          "iam:CreateAccessKey",
+          "iam:DeleteAccessKey",
+          "iam:DeleteUser",
+          "iam:GetAccessKeyLastUsed",
+          "iam:GetUser",
+          "iam:ListAccessKeys",
+          "iam:ListAttachedUserPolicies",
+          "iam:ListUserTags",
+          "iam:TagUser",
+          "iam:UntagUser",
+          "iam:UpdateAccessKey"
+        ]
+        Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/applications/${application.path}/*"
+        Condition = {
+          StringEquals = {
+            "iam:ResourceTag/Application" = application.application
+            "iam:ResourceTag/ManagedBy"   = "OpenTofu"
+          }
+          StringLike = {
+            "iam:ResourceTag/SESFromAddress" = "*@${application.domain}"
+          }
+        }
+      }],
+      [for key, application in local.application_ses_senders : {
+        Sid      = "RejectInvalid${replace(title(key), "_", "")}SenderTags"
+        Effect   = "Deny"
+        Action   = "iam:TagUser"
+        Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/applications/${application.path}/*"
+        Condition = {
+          Null = {
+            "aws:RequestTag/SESFromAddress" = "false"
+          }
+          StringNotLike = {
+            "aws:RequestTag/SESFromAddress" = "*@${application.domain}"
+          }
+        }
+      }],
+      [for key, application in local.application_ses_senders : {
+        Sid      = "RejectInvalid${replace(title(key), "_", "")}ApplicationTags"
+        Effect   = "Deny"
+        Action   = "iam:TagUser"
+        Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/applications/${application.path}/*"
+        Condition = {
+          Null = {
+            "aws:RequestTag/Application" = "false"
+          }
+          StringNotEquals = {
+            "aws:RequestTag/Application" = application.application
+          }
+        }
+      }]
+    )
+  })
+}
