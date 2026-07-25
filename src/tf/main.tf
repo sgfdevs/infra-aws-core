@@ -247,7 +247,10 @@ resource "aws_iam_policy" "application_ses_sender" {
           "ses:SendEmail",
           "ses:SendRawEmail"
         ]
-        Resource = aws_sesv2_email_identity.domain[each.value.domain].arn
+        Resource = [
+          aws_sesv2_email_identity.domain[each.value.domain].arn,
+          aws_sesv2_configuration_set.transactional.arn,
+        ]
         Condition = {
           StringEquals = {
             "ses:FromAddress" = "$${aws:PrincipalTag/SESFromAddress}"
