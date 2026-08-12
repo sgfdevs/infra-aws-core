@@ -97,7 +97,8 @@ resource "aws_iam_role" "github_actions_terraform" {
             "token.actions.githubusercontent.com:sub" = [
               "repo:sgfdevs@53604170/infra-vm-workloads@1189754282:*",
               "repo:sgfdevs@53604170/infra-dns@1191039220:*",
-              "repo:sgfdevs@53604170/infra-app-config@1298907442:*"
+              "repo:sgfdevs@53604170/infra-app-config@1298907442:*",
+              "repo:sgfdevs@53604170/infra-gh@1331469226:*"
             ]
           }
           StringEquals = {
