@@ -214,13 +214,11 @@ resource "aws_iam_role_policy" "github_actions_terraform_ses" {
 locals {
   application_ses_senders = {
     methodconf = {
-      application = "methodconf.com"
       domain      = "methodconf.com"
       path        = "methodconf"
       policy_name = "MethodConfSESSender"
     }
     sgf_dev = {
-      application = "sgf.dev"
       domain      = "sgf.dev"
       path        = "sgf-dev"
       policy_name = "SgfDevSESSender"
@@ -237,7 +235,7 @@ resource "aws_iam_policy" "application_ses_sender" {
 
   name        = each.value.policy_name
   path        = "/applications/${each.value.path}/"
-  description = "Allow ${each.value.application} applications to send email from their tagged address"
+  description = "Allow ${each.value.domain} applications to send email from their tagged address"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -276,11 +274,13 @@ resource "aws_iam_role_policy" "github_actions_terraform_application_ses_iam" {
         Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/applications/${application.path}/*"
         Condition = {
           StringEquals = {
-            "aws:RequestTag/Application" = application.application
-            "aws:RequestTag/ManagedBy"   = "OpenTofu"
+            "aws:RequestTag/ManagedBy" = "OpenTofu"
           }
           StringLike = {
             "aws:RequestTag/SESFromAddress" = "*@${application.domain}"
+          }
+          Null = {
+            "aws:RequestTag/Application" = "false"
           }
           "ForAllValues:StringEquals" = {
             "aws:TagKeys" = [
@@ -305,11 +305,13 @@ resource "aws_iam_role_policy" "github_actions_terraform_application_ses_iam" {
             "iam:PolicyARN" = local.application_ses_policy_arns[key]
           }
           StringEquals = {
-            "iam:ResourceTag/Application" = application.application
-            "iam:ResourceTag/ManagedBy"   = "OpenTofu"
+            "iam:ResourceTag/ManagedBy" = "OpenTofu"
           }
           StringLike = {
             "iam:ResourceTag/SESFromAddress" = "*@${application.domain}"
+          }
+          Null = {
+            "iam:ResourceTag/Application" = "false"
           }
         }
       }],
@@ -332,11 +334,13 @@ resource "aws_iam_role_policy" "github_actions_terraform_application_ses_iam" {
         Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/applications/${application.path}/*"
         Condition = {
           StringEquals = {
-            "iam:ResourceTag/Application" = application.application
-            "iam:ResourceTag/ManagedBy"   = "OpenTofu"
+            "iam:ResourceTag/ManagedBy" = "OpenTofu"
           }
           StringLike = {
             "iam:ResourceTag/SESFromAddress" = "*@${application.domain}"
+          }
+          Null = {
+            "iam:ResourceTag/Application" = "false"
           }
         }
       }],
@@ -354,20 +358,6 @@ resource "aws_iam_role_policy" "github_actions_terraform_application_ses_iam" {
           }
         }
       }],
-      [for key, application in local.application_ses_senders : {
-        Sid      = "RejectInvalid${replace(title(key), "_", "")}ApplicationTags"
-        Effect   = "Deny"
-        Action   = "iam:TagUser"
-        Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/applications/${application.path}/*"
-        Condition = {
-          Null = {
-            "aws:RequestTag/Application" = "false"
-          }
-          StringNotEquals = {
-            "aws:RequestTag/Application" = application.application
-          }
-        }
-      }]
     )
   })
 }
