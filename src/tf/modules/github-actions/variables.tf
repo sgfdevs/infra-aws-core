@@ -52,11 +52,6 @@ variable "state_lock_table_arn" {
   type        = string
 }
 
-variable "vm_workloads_bootstrap_parameter_arns" {
-  description = "ARNs of the bootstrap parameters read by infra-vm-workloads."
-  type        = list(string)
-}
-
 variable "vm_workloads_parameter_arn" {
   description = "ARN pattern for parameters managed by infra-vm-workloads."
   type        = string
