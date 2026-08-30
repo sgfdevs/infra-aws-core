@@ -8,12 +8,6 @@ output "backend_table_name" {
   value       = aws_dynamodb_table.tflock_state.name
 }
 
-output "github_actions_role_arn" {
-  description = "IAM role ARN for GitHub Actions OIDC authentication."
-  value       = aws_iam_role.github_actions_terraform.arn
-  sensitive   = true
-}
-
 output "github_actions_app_config_role_arn" {
   description = "IAM role ARN for infra-app-config GitHub Actions."
   value       = module.github_actions.app_config_role_arn
