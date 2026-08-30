@@ -32,6 +32,16 @@ output "github_actions_vm_workloads_role_arn" {
   sensitive   = true
 }
 
+output "sgfdevs_k3s_oidc_provider_arn" {
+  description = "IAM OIDC provider ARN for the SGF Devs K3s cluster."
+  value       = aws_iam_openid_connect_provider.sgfdevs_k3s.arn
+}
+
+output "sgfdevs_k3s_workload_boundary_arn" {
+  description = "Permissions boundary ARN for SGF Devs K3s Kubernetes workload roles."
+  value       = aws_iam_policy.sgfdevs_k3s_kubernetes_workload_boundary.arn
+}
+
 output "ses_email_identity_arns" {
   description = "ARNs of the SES identities used for outbound email."
   value       = { for domain, identity in aws_sesv2_email_identity.domain : domain => identity.arn }
