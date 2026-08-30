@@ -20,20 +20,6 @@ resource "aws_iam_role_policy" "github_actions_vm_workloads" {
         Resource = var.vm_workloads_parameter_arn
       },
       {
-        Sid    = "ReadBootstrapParameters"
-        Effect = "Allow"
-        Action = [
-          "ssm:GetParameter",
-          "ssm:GetParameters",
-        ]
-        Resource = var.vm_workloads_bootstrap_parameter_arns
-        Condition = {
-          StringEquals = {
-            "token.actions.githubusercontent.com:sub" = "$${aws:PrincipalTag/GitHubMainSubject}"
-          }
-        }
-      },
-      {
         Sid      = "DescribeParameters"
         Effect   = "Allow"
         Action   = "ssm:DescribeParameters"
