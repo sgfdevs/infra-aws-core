@@ -1,3 +1,5 @@
+data "aws_region" "current" {}
+
 resource "aws_iam_role_policy" "github_actions_app_config" {
   name = "InfraAppConfigRepositoryAccess"
   role = aws_iam_role.github_actions["app_config"].id
@@ -5,6 +7,14 @@ resource "aws_iam_role_policy" "github_actions_app_config" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = concat(
+      [
+        {
+          Sid      = "ReadDexOpenBaoClientSecret"
+          Effect   = "Allow"
+          Action   = "ssm:GetParameter"
+          Resource = "arn:aws:ssm:${data.aws_region.current.region}:${var.aws_account_id}:parameter/vm-workloads/sgfdevs/infra-vm-workloads/dex-openbao-client-secret"
+        },
+      ],
       [for key, application in var.application_ses_senders : {
         Sid      = "Create${replace(title(key), "_", "")}SESUsers"
         Effect   = "Allow"
