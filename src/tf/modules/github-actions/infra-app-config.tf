@@ -1,9 +1,5 @@
 data "aws_region" "current" {}
 
-locals {
-  app_config_kaneo_workload_role_arn = "arn:aws:iam::${var.aws_account_id}:role/sgfdevs-k3s/sgfdevs-k3s-kaneo"
-}
-
 resource "aws_iam_role_policy" "github_actions_app_config" {
   name = "InfraAppConfigRepositoryAccess"
   role = aws_iam_role.github_actions["app_config"].id
@@ -50,7 +46,29 @@ resource "aws_iam_role_policy" "github_actions_app_config" {
           }
         },
         {
-          Sid    = "ReadKaneoWorkloadRole"
+          Sid    = "DenyApplicationObjectAccess"
+          Effect = "Deny"
+          Action = [
+            "s3:AbortMultipartUpload",
+            "s3:DeleteObject*",
+            "s3:GetObject*",
+            "s3:PutObject*",
+            "s3:RestoreObject",
+            "s3:SelectObjectContent",
+          ]
+          NotResource = "${var.state_bucket_arn}/*"
+        },
+        {
+          Sid    = "DenyUsingProvisionedRoles"
+          Effect = "Deny"
+          Action = [
+            "iam:PassRole",
+            "sts:AssumeRole",
+          ]
+          Resource = "*"
+        },
+        {
+          Sid    = "ReadApplicationWorkloadRoles"
           Effect = "Allow"
           Action = [
             "iam:GetRole",
@@ -60,62 +78,63 @@ resource "aws_iam_role_policy" "github_actions_app_config" {
             "iam:ListRolePolicies",
             "iam:ListRoleTags",
           ]
-          Resource = local.app_config_kaneo_workload_role_arn
-        },
-        {
-          Sid      = "CreateKaneoWorkloadRoleFromMain"
-          Effect   = "Allow"
-          Action   = "iam:CreateRole"
-          Resource = local.app_config_kaneo_workload_role_arn
+          Resource = "arn:aws:iam::${var.aws_account_id}:role/*"
           Condition = {
             StringEquals = {
-              "aws:RequestTag/KubernetesNamespace"      = "kaneo"
-              "aws:RequestTag/KubernetesServiceAccount" = "kaneo-secrets"
-              "aws:RequestTag/ManagedBy"                = "OpenTofu"
-              "aws:RequestTag/Repository"               = "sgfdevs/infra-app-config"
-              "iam:PermissionsBoundary"                 = var.sgfdevs_k3s_workload_boundary_arn
-              "token.actions.githubusercontent.com:sub" = "$${aws:PrincipalTag/GitHubMainSubject}"
-            }
-            "ForAllValues:StringEquals" = {
-              "aws:TagKeys" = [
-                "KubernetesNamespace",
-                "KubernetesServiceAccount",
-                "ManagedBy",
-                "Repository",
-              ]
+              "aws:ResourceTag/ManagedBy"  = "OpenTofu"
+              "aws:ResourceTag/Repository" = "sgfdevs/infra-app-config"
             }
           }
         },
         {
-          Sid    = "ManageKaneoWorkloadRoleTagsFromMain"
+          Sid      = "CreateApplicationWorkloadRolesFromMain"
+          Effect   = "Allow"
+          Action   = "iam:CreateRole"
+          Resource = "arn:aws:iam::${var.aws_account_id}:role/*"
+          Condition = {
+            Null = {
+              "aws:RequestTag/KubernetesNamespace"      = "false"
+              "aws:RequestTag/KubernetesServiceAccount" = "false"
+            }
+            StringEquals = {
+              "aws:RequestTag/ManagedBy"                = "OpenTofu"
+              "aws:RequestTag/Repository"               = "sgfdevs/infra-app-config"
+              "iam:PermissionsBoundary"                 = var.sgfdevs_k3s_application_s3_workload_boundary_arn
+              "token.actions.githubusercontent.com:sub" = "$${aws:PrincipalTag/GitHubMainSubject}"
+            }
+          }
+        },
+        {
+          Sid      = "TagApplicationWorkloadRolesOnCreate"
+          Effect   = "Allow"
+          Action   = "iam:TagRole"
+          Resource = "arn:aws:iam::${var.aws_account_id}:role/*"
+          Condition = {
+            StringEquals = {
+              "aws:RequestTag/ManagedBy"                = "OpenTofu"
+              "aws:RequestTag/Repository"               = "sgfdevs/infra-app-config"
+              "token.actions.githubusercontent.com:sub" = "$${aws:PrincipalTag/GitHubMainSubject}"
+            }
+          }
+        },
+        {
+          Sid    = "ManageApplicationWorkloadRoleTagsFromMain"
           Effect = "Allow"
           Action = [
             "iam:TagRole",
             "iam:UntagRole",
           ]
-          Resource = local.app_config_kaneo_workload_role_arn
+          Resource = "arn:aws:iam::${var.aws_account_id}:role/*"
           Condition = {
-            "ForAllValues:StringEquals" = {
-              "aws:TagKeys" = [
-                "KubernetesNamespace",
-                "KubernetesServiceAccount",
-                "ManagedBy",
-                "Repository",
-              ]
-            }
             StringEquals = {
+              "aws:ResourceTag/ManagedBy"               = "OpenTofu"
+              "aws:ResourceTag/Repository"              = "sgfdevs/infra-app-config"
               "token.actions.githubusercontent.com:sub" = "$${aws:PrincipalTag/GitHubMainSubject}"
-            }
-            StringEqualsIfExists = {
-              "aws:RequestTag/KubernetesNamespace"      = "kaneo"
-              "aws:RequestTag/KubernetesServiceAccount" = "kaneo-secrets"
-              "aws:RequestTag/ManagedBy"                = "OpenTofu"
-              "aws:RequestTag/Repository"               = "sgfdevs/infra-app-config"
             }
           }
         },
         {
-          Sid    = "ManageBoundedKaneoWorkloadRoleFromMain"
+          Sid    = "ManageApplicationWorkloadRolesFromMain"
           Effect = "Allow"
           Action = [
             "iam:DeleteRole",
@@ -125,10 +144,12 @@ resource "aws_iam_role_policy" "github_actions_app_config" {
             "iam:UpdateAssumeRolePolicy",
             "iam:UpdateRole",
           ]
-          Resource = local.app_config_kaneo_workload_role_arn
+          Resource = "arn:aws:iam::${var.aws_account_id}:role/*"
           Condition = {
             StringEquals = {
-              "iam:PermissionsBoundary"                 = var.sgfdevs_k3s_workload_boundary_arn
+              "aws:ResourceTag/ManagedBy"               = "OpenTofu"
+              "aws:ResourceTag/Repository"              = "sgfdevs/infra-app-config"
+              "iam:PermissionsBoundary"                 = var.sgfdevs_k3s_application_s3_workload_boundary_arn
               "token.actions.githubusercontent.com:sub" = "$${aws:PrincipalTag/GitHubMainSubject}"
             }
           }
