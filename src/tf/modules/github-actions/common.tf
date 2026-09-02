@@ -21,6 +21,13 @@ locals {
       state_key      = "sgfdevs/infra-gh/terraform.tfstate"
       state_prefix   = "sgfdevs/infra-gh"
     }
+    iam = {
+      github_subject = "repo:sgfdevs@53604170/infra-iam@1354768312"
+      repository     = "sgfdevs/infra-iam"
+      role_name      = "GitHubActionsInfraIAMRole"
+      state_key      = "sgfdevs-infra-iam/terraform.tfstate"
+      state_prefix   = "sgfdevs-infra-iam"
+    }
     vm_workloads = {
       github_subject = "repo:sgfdevs@53604170/infra-vm-workloads@1189754282"
       repository     = "sgfdevs/infra-vm-workloads"
