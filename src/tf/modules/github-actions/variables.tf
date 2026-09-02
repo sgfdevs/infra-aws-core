@@ -27,6 +27,11 @@ variable "ses_identity_arns" {
   type        = list(string)
 }
 
+variable "sgfdevs_k3s_application_s3_workload_boundary_arn" {
+  description = "Permissions boundary ARN for application-managed Kubernetes S3 workload roles."
+  type        = string
+}
+
 variable "sgfdevs_k3s_oidc_provider_arn" {
   description = "ARN of the Kubernetes OIDC provider for the SGF Devs K3s cluster."
   type        = string
