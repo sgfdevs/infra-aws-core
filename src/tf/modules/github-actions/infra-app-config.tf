@@ -1,5 +1,10 @@
 data "aws_region" "current" {}
 
+locals {
+  app_config_kaneo_bucket_arn        = "arn:aws:s3:::sgfdevs-kaneo-assets"
+  app_config_kaneo_workload_role_arn = "arn:aws:iam::${var.aws_account_id}:role/sgfdevs-k3s/sgfdevs-k3s-kaneo"
+}
+
 resource "aws_iam_role_policy" "github_actions_app_config" {
   name = "InfraAppConfigRepositoryAccess"
   role = aws_iam_role.github_actions["app_config"].id
@@ -13,6 +18,117 @@ resource "aws_iam_role_policy" "github_actions_app_config" {
           Effect   = "Allow"
           Action   = "ssm:GetParameter"
           Resource = "arn:aws:ssm:${data.aws_region.current.region}:${var.aws_account_id}:parameter/vm-workloads/sgfdevs/infra-vm-workloads/dex-openbao-client-secret"
+        },
+        {
+          Sid    = "ReadKaneoBucketConfiguration"
+          Effect = "Allow"
+          Action = [
+            "s3:Get*",
+            "s3:ListBucket",
+          ]
+          Resource = local.app_config_kaneo_bucket_arn
+        },
+        {
+          Sid    = "ManageKaneoBucketFromMain"
+          Effect = "Allow"
+          Action = [
+            "s3:CreateBucket",
+            "s3:DeleteBucket",
+            "s3:DeleteBucket*",
+            "s3:DeleteEncryptionConfiguration",
+            "s3:PutBucket*",
+            "s3:PutEncryptionConfiguration",
+          ]
+          Resource = local.app_config_kaneo_bucket_arn
+          Condition = {
+            StringEquals = {
+              "token.actions.githubusercontent.com:sub" = "$${aws:PrincipalTag/GitHubMainSubject}"
+            }
+          }
+        },
+        {
+          Sid    = "ReadKaneoWorkloadRole"
+          Effect = "Allow"
+          Action = [
+            "iam:GetRole",
+            "iam:GetRolePolicy",
+            "iam:ListAttachedRolePolicies",
+            "iam:ListInstanceProfilesForRole",
+            "iam:ListRolePolicies",
+            "iam:ListRoleTags",
+          ]
+          Resource = local.app_config_kaneo_workload_role_arn
+        },
+        {
+          Sid      = "CreateKaneoWorkloadRoleFromMain"
+          Effect   = "Allow"
+          Action   = "iam:CreateRole"
+          Resource = local.app_config_kaneo_workload_role_arn
+          Condition = {
+            StringEquals = {
+              "aws:RequestTag/KubernetesNamespace"      = "kaneo"
+              "aws:RequestTag/KubernetesServiceAccount" = "kaneo-secrets"
+              "aws:RequestTag/ManagedBy"                = "OpenTofu"
+              "aws:RequestTag/Repository"               = "sgfdevs/infra-app-config"
+              "iam:PermissionsBoundary"                 = var.sgfdevs_k3s_workload_boundary_arn
+              "token.actions.githubusercontent.com:sub" = "$${aws:PrincipalTag/GitHubMainSubject}"
+            }
+            "ForAllValues:StringEquals" = {
+              "aws:TagKeys" = [
+                "KubernetesNamespace",
+                "KubernetesServiceAccount",
+                "ManagedBy",
+                "Repository",
+              ]
+            }
+          }
+        },
+        {
+          Sid    = "ManageKaneoWorkloadRoleTagsFromMain"
+          Effect = "Allow"
+          Action = [
+            "iam:TagRole",
+            "iam:UntagRole",
+          ]
+          Resource = local.app_config_kaneo_workload_role_arn
+          Condition = {
+            "ForAllValues:StringEquals" = {
+              "aws:TagKeys" = [
+                "KubernetesNamespace",
+                "KubernetesServiceAccount",
+                "ManagedBy",
+                "Repository",
+              ]
+            }
+            StringEquals = {
+              "token.actions.githubusercontent.com:sub" = "$${aws:PrincipalTag/GitHubMainSubject}"
+            }
+            StringEqualsIfExists = {
+              "aws:RequestTag/KubernetesNamespace"      = "kaneo"
+              "aws:RequestTag/KubernetesServiceAccount" = "kaneo-secrets"
+              "aws:RequestTag/ManagedBy"                = "OpenTofu"
+              "aws:RequestTag/Repository"               = "sgfdevs/infra-app-config"
+            }
+          }
+        },
+        {
+          Sid    = "ManageBoundedKaneoWorkloadRoleFromMain"
+          Effect = "Allow"
+          Action = [
+            "iam:DeleteRole",
+            "iam:DeleteRolePolicy",
+            "iam:PutRolePermissionsBoundary",
+            "iam:PutRolePolicy",
+            "iam:UpdateAssumeRolePolicy",
+            "iam:UpdateRole",
+          ]
+          Resource = local.app_config_kaneo_workload_role_arn
+          Condition = {
+            StringEquals = {
+              "iam:PermissionsBoundary"                 = var.sgfdevs_k3s_workload_boundary_arn
+              "token.actions.githubusercontent.com:sub" = "$${aws:PrincipalTag/GitHubMainSubject}"
+            }
+          }
         },
       ],
       [for key, application in var.application_ses_senders : {
