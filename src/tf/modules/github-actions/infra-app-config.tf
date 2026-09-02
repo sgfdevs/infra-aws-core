@@ -1,7 +1,6 @@
 data "aws_region" "current" {}
 
 locals {
-  app_config_kaneo_bucket_arn        = "arn:aws:s3:::sgfdevs-kaneo-assets"
   app_config_kaneo_workload_role_arn = "arn:aws:iam::${var.aws_account_id}:role/sgfdevs-k3s/sgfdevs-k3s-kaneo"
 }
 
@@ -20,26 +19,41 @@ resource "aws_iam_role_policy" "github_actions_app_config" {
           Resource = "arn:aws:ssm:${data.aws_region.current.region}:${var.aws_account_id}:parameter/vm-workloads/sgfdevs/infra-vm-workloads/dex-openbao-client-secret"
         },
         {
-          Sid    = "ReadKaneoBucketConfiguration"
+          Sid    = "ReadApplicationBucketConfiguration"
           Effect = "Allow"
           Action = [
-            "s3:Get*",
+            "s3:GetAccelerateConfiguration",
+            "s3:GetBucketAcl",
+            "s3:GetBucketCORS",
+            "s3:GetBucketLocation",
+            "s3:GetBucketLogging",
+            "s3:GetBucketOwnershipControls",
+            "s3:GetBucketPolicy",
+            "s3:GetBucketPolicyStatus",
+            "s3:GetBucketPublicAccessBlock",
+            "s3:GetBucketRequestPayment",
+            "s3:GetBucketTagging",
+            "s3:GetBucketVersioning",
+            "s3:GetBucketWebsite",
+            "s3:GetEncryptionConfiguration",
+            "s3:GetLifecycleConfiguration",
+            "s3:GetObjectLockConfiguration",
+            "s3:GetReplicationConfiguration",
             "s3:ListBucket",
           ]
-          Resource = local.app_config_kaneo_bucket_arn
+          NotResource = var.state_bucket_arn
         },
         {
-          Sid    = "ManageKaneoBucketFromMain"
+          Sid    = "ManageApplicationBucketsFromMain"
           Effect = "Allow"
           Action = [
             "s3:CreateBucket",
             "s3:DeleteBucket",
             "s3:DeleteBucket*",
-            "s3:DeleteEncryptionConfiguration",
             "s3:PutBucket*",
             "s3:PutEncryptionConfiguration",
           ]
-          Resource = local.app_config_kaneo_bucket_arn
+          NotResource = var.state_bucket_arn
           Condition = {
             StringEquals = {
               "token.actions.githubusercontent.com:sub" = "$${aws:PrincipalTag/GitHubMainSubject}"
