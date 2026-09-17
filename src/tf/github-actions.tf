@@ -4,6 +4,7 @@ module "github_actions" {
   application_ses_policy_arns                      = local.application_ses_policy_arns
   application_ses_senders                          = local.application_ses_senders
   aws_account_id                                   = data.aws_caller_identity.current.account_id
+  identity_store_id                                = local.identity_store_id
   oidc_provider_arn                                = aws_iam_openid_connect_provider.github_actions.arn
   ses_identity_arns                                = [for identity in aws_sesv2_email_identity.domain : identity.arn]
   sgfdevs_k3s_application_s3_workload_boundary_arn = aws_iam_policy.sgfdevs_k3s_application_s3_workload_boundary.arn
