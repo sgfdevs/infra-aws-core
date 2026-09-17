@@ -17,6 +17,11 @@ variable "aws_account_id" {
   type        = string
 }
 
+variable "identity_store_id" {
+  description = "IAM Identity Center identity store managed by infra-iam."
+  type        = string
+}
+
 variable "oidc_provider_arn" {
   description = "ARN of the GitHub Actions OIDC provider."
   type        = string
