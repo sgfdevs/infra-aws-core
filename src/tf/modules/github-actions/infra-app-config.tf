@@ -37,6 +37,7 @@ resource "aws_iam_role_policy" "github_actions_app_config" {
             "s3:DeleteBucket*",
             "s3:PutBucket*",
             "s3:PutEncryptionConfiguration",
+            "s3:PutLifecycleConfiguration",
           ]
           NotResource = var.state_bucket_arn
           Condition = {
