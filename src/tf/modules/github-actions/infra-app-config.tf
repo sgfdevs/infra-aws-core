@@ -1,5 +1,9 @@
 data "aws_region" "current" {}
 
+locals {
+  application_ses_configuration_set_arn = "arn:aws:ses:${data.aws_region.current.region}:${var.aws_account_id}:configuration-set/application-*"
+}
+
 resource "aws_iam_role_policy" "github_actions_app_config" {
   name = "InfraAppConfigRepositoryAccess"
   role = aws_iam_role.github_actions["app_config"].id
@@ -13,6 +17,29 @@ resource "aws_iam_role_policy" "github_actions_app_config" {
           Effect   = "Allow"
           Action   = "ssm:GetParameter"
           Resource = "arn:aws:ssm:${data.aws_region.current.region}:${var.aws_account_id}:parameter/vm-workloads/sgfdevs/infra-vm-workloads/dex-openbao-client-secret"
+        },
+        {
+          Sid      = "ReadApplicationSESConfigurationSets"
+          Effect   = "Allow"
+          Action   = ["ses:GetConfigurationSet", "ses:ListTagsForResource"]
+          Resource = local.application_ses_configuration_set_arn
+        },
+        {
+          Sid    = "ManageApplicationSESConfigurationSetsFromMain"
+          Effect = "Allow"
+          Action = [
+            "ses:CreateConfigurationSet",
+            "ses:DeleteConfigurationSet",
+            "ses:PutConfigurationSet*",
+            "ses:TagResource",
+            "ses:UntagResource",
+          ]
+          Resource = local.application_ses_configuration_set_arn
+          Condition = {
+            StringEquals = {
+              "token.actions.githubusercontent.com:sub" = "$${aws:PrincipalTag/GitHubMainSubject}"
+            }
+          }
         },
         {
           Sid    = "ReadApplicationBucketConfiguration"
