@@ -1,7 +1,7 @@
 data "aws_region" "current" {}
 
 locals {
-  listmonk_ses_configuration_set_arn = "arn:aws:ses:${data.aws_region.current.region}:${var.aws_account_id}:configuration-set/listmonk"
+  application_ses_configuration_set_arn = "arn:aws:ses:${data.aws_region.current.region}:${var.aws_account_id}:configuration-set/application-*"
 }
 
 resource "aws_iam_role_policy" "github_actions_app_config" {
@@ -19,13 +19,13 @@ resource "aws_iam_role_policy" "github_actions_app_config" {
           Resource = "arn:aws:ssm:${data.aws_region.current.region}:${var.aws_account_id}:parameter/vm-workloads/sgfdevs/infra-vm-workloads/dex-openbao-client-secret"
         },
         {
-          Sid      = "ReadListmonkSESConfigurationSet"
+          Sid      = "ReadApplicationSESConfigurationSets"
           Effect   = "Allow"
           Action   = ["ses:GetConfigurationSet", "ses:ListTagsForResource"]
-          Resource = local.listmonk_ses_configuration_set_arn
+          Resource = local.application_ses_configuration_set_arn
         },
         {
-          Sid    = "ManageListmonkSESConfigurationSetFromMain"
+          Sid    = "ManageApplicationSESConfigurationSetsFromMain"
           Effect = "Allow"
           Action = [
             "ses:CreateConfigurationSet",
@@ -34,7 +34,7 @@ resource "aws_iam_role_policy" "github_actions_app_config" {
             "ses:TagResource",
             "ses:UntagResource",
           ]
-          Resource = local.listmonk_ses_configuration_set_arn
+          Resource = local.application_ses_configuration_set_arn
           Condition = {
             StringEquals = {
               "token.actions.githubusercontent.com:sub" = "$${aws:PrincipalTag/GitHubMainSubject}"

@@ -115,12 +115,11 @@ resource "aws_iam_policy" "application_ses_sender" {
           "ses:SendEmail",
           "ses:SendRawEmail"
         ]
-        Resource = concat([
+        Resource = [
           aws_sesv2_email_identity.domain[each.value.domain].arn,
           aws_sesv2_configuration_set.transactional.arn,
-          ], each.key == "sgf_dev" ? [
-          "arn:aws:ses:${var.aws_region}:${data.aws_caller_identity.current.account_id}:configuration-set/listmonk",
-        ] : [])
+          "arn:aws:ses:${var.aws_region}:${data.aws_caller_identity.current.account_id}:configuration-set/application-${each.value.path}-*",
+        ]
         Condition = {
           StringEquals = {
             "ses:FromAddress" = "$${aws:PrincipalTag/SESFromAddress}"
