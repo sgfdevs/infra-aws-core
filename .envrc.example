@@ -1,2 +1,4 @@
 export AWS_DEFAULT_PROFILE="your-aws-profile-name"
 export TF_VAR_aws_region="us-east-2"
+# Required: verified LZ account owning SGFDevsBootstrapTailnetParameterReader.
+export TF_VAR_lz_aws_account_id="your-12-digit-lz-account-id"
