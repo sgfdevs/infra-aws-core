@@ -22,6 +22,11 @@ variable "identity_store_id" {
   type        = string
 }
 
+variable "lz_bootstrap_tailnet_reader_role_arn" {
+  description = "ARN of the LZ role for SGF Devs workflow bootstrap ingress auth-key reads."
+  type        = string
+}
+
 variable "oidc_provider_arn" {
   description = "ARN of the GitHub Actions OIDC provider."
   type        = string
