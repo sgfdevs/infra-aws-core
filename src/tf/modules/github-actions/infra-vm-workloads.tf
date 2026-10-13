@@ -35,6 +35,18 @@ resource "aws_iam_role_policy" "github_actions_vm_workloads" {
         }
       },
       {
+        Sid      = "RestoreVMWorkloadsParameterReaderUserBoundaryFromMain"
+        Effect   = "Allow"
+        Action   = "iam:PutUserPermissionsBoundary"
+        Resource = local.vm_workloads_parameter_reader_user_arn_pattern
+        Condition = {
+          StringEquals = {
+            "iam:PermissionsBoundary"                 = var.vm_workloads_parameter_reader_boundary_arn
+            "token.actions.githubusercontent.com:sub" = "$${aws:PrincipalTag/GitHubMainSubject}"
+          }
+        }
+      },
+      {
         Sid    = "ManageBoundedVMWorkloadsParameterReaderInlinePolicyFromMain"
         Effect = "Allow"
         Action = [
@@ -80,6 +92,7 @@ resource "aws_iam_role_policy" "github_actions_vm_workloads" {
           "iam:CreateAccessKey",
           "iam:DeleteAccessKey",
           "iam:DeleteUser",
+          "iam:UpdateAccessKey",
         ]
         Resource = local.vm_workloads_parameter_reader_user_arn_pattern
         Condition = {
