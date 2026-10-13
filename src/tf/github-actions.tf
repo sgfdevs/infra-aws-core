@@ -1,6 +1,8 @@
 module "github_actions" {
   source = "./modules/github-actions"
 
+  vm_workloads_parameter_reader_boundary_arn = aws_iam_policy.vm_workloads_parameter_reader_boundary.arn
+
   application_ses_policy_arns                      = local.application_ses_policy_arns
   application_ses_senders                          = local.application_ses_senders
   aws_account_id                                   = data.aws_caller_identity.current.account_id
