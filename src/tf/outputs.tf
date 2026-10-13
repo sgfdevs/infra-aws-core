@@ -1,3 +1,8 @@
+output "k3s_bootstrap_reader_user_name" {
+  description = "IAM user name for operator-issued bootstrap credentials. Create and rotate access keys outside OpenTofu."
+  value       = aws_iam_user.k3s_bootstrap_reader.name
+}
+
 output "backend_bucket_name" {
   description = "S3 bucket name for OpenTofu state storage."
   value       = aws_s3_bucket.tfstate_state.bucket

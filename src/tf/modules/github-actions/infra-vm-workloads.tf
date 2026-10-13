@@ -26,17 +26,6 @@ resource "aws_iam_role_policy" "github_actions_vm_workloads" {
         Resource = "*"
       },
       {
-        Sid      = "AssumeLZBootstrapTailnetReaderFromMain"
-        Effect   = "Allow"
-        Action   = "sts:AssumeRole"
-        Resource = var.lz_bootstrap_tailnet_reader_role_arn
-        Condition = {
-          StringEquals = {
-            "token.actions.githubusercontent.com:sub" = "${local.repositories.vm_workloads.github_subject}:ref:refs/heads/main"
-          }
-        }
-      },
-      {
         Sid    = "ReadSGFDevsK3sOIDCProvider"
         Effect = "Allow"
         Action = [
