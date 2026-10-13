@@ -1,5 +1,6 @@
 locals {
-  vm_workloads_workload_role_arn_pattern = "arn:aws:iam::${var.aws_account_id}:role/sgfdevs-k3s/*"
+  vm_workloads_parameter_reader_user_arn_pattern = "arn:aws:iam::${var.aws_account_id}:user/vm-workloads/sgfdevs/*"
+  vm_workloads_workload_role_arn_pattern         = "arn:aws:iam::${var.aws_account_id}:role/sgfdevs-k3s/*"
 }
 
 resource "aws_iam_role_policy" "github_actions_vm_workloads" {
@@ -9,6 +10,97 @@ resource "aws_iam_role_policy" "github_actions_vm_workloads" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
+      {
+        Sid    = "ReadVMWorkloadsParameterReaderUsers"
+        Effect = "Allow"
+        Action = [
+          "iam:GetUser",
+          "iam:GetUserPolicy",
+          "iam:ListAccessKeys",
+          "iam:ListGroupsForUser",
+          "iam:ListUserTags",
+        ]
+        Resource = local.vm_workloads_parameter_reader_user_arn_pattern
+      },
+      {
+        Sid      = "CreateBoundedVMWorkloadsParameterReaderUserFromMain"
+        Effect   = "Allow"
+        Action   = "iam:CreateUser"
+        Resource = local.vm_workloads_parameter_reader_user_arn_pattern
+        Condition = {
+          StringEquals = {
+            "iam:PermissionsBoundary"                 = var.vm_workloads_parameter_reader_boundary_arn
+            "token.actions.githubusercontent.com:sub" = "$${aws:PrincipalTag/GitHubMainSubject}"
+          }
+        }
+      },
+      {
+        Sid      = "RestoreVMWorkloadsParameterReaderUserBoundaryFromMain"
+        Effect   = "Allow"
+        Action   = "iam:PutUserPermissionsBoundary"
+        Resource = local.vm_workloads_parameter_reader_user_arn_pattern
+        Condition = {
+          StringEquals = {
+            "iam:PermissionsBoundary"                 = var.vm_workloads_parameter_reader_boundary_arn
+            "token.actions.githubusercontent.com:sub" = "$${aws:PrincipalTag/GitHubMainSubject}"
+          }
+        }
+      },
+      {
+        Sid    = "ManageBoundedVMWorkloadsParameterReaderInlinePolicyFromMain"
+        Effect = "Allow"
+        Action = [
+          "iam:DeleteUserPolicy",
+          "iam:PutUserPolicy",
+        ]
+        Resource = local.vm_workloads_parameter_reader_user_arn_pattern
+        Condition = {
+          StringEquals = {
+            "iam:PermissionsBoundary"                 = var.vm_workloads_parameter_reader_boundary_arn
+            "token.actions.githubusercontent.com:sub" = "$${aws:PrincipalTag/GitHubMainSubject}"
+          }
+        }
+      },
+      {
+        Sid    = "ManageVMWorkloadsParameterReaderUserTagsFromMain"
+        Effect = "Allow"
+        Action = [
+          "iam:TagUser",
+          "iam:UntagUser",
+        ]
+        Resource = local.vm_workloads_parameter_reader_user_arn_pattern
+        Condition = {
+          "ForAllValues:StringEquals" = {
+            "aws:TagKeys" = [
+              "ManagedBy",
+              "Repository",
+            ]
+          }
+          StringEquals = {
+            "token.actions.githubusercontent.com:sub" = "$${aws:PrincipalTag/GitHubMainSubject}"
+          }
+          StringEqualsIfExists = {
+            "aws:RequestTag/ManagedBy"  = "OpenTofu"
+            "aws:RequestTag/Repository" = "sgfdevs/infra-vm-workloads"
+          }
+        }
+      },
+      {
+        Sid    = "ManageVMWorkloadsParameterReaderUserLifecycleFromMain"
+        Effect = "Allow"
+        Action = [
+          "iam:CreateAccessKey",
+          "iam:DeleteAccessKey",
+          "iam:DeleteUser",
+          "iam:UpdateAccessKey",
+        ]
+        Resource = local.vm_workloads_parameter_reader_user_arn_pattern
+        Condition = {
+          StringEquals = {
+            "token.actions.githubusercontent.com:sub" = "$${aws:PrincipalTag/GitHubMainSubject}"
+          }
+        }
+      },
       {
         Sid    = "ReadWorkloadParameters"
         Effect = "Allow"
