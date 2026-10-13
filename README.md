@@ -89,24 +89,24 @@ authenticated.
    exist and the key is active without exposing values. Confirm the existing
    VM workflow can retrieve them. For the manual main Ansible workflow,
    use `initialize-terraform=true` to configure its AWS credentials.
-3. Follow the matching Kubernetes prepare/transfer/cleanup migration docs.
-   Apply prepare protections before transferring resource ownership. Deploy
-   the redesigned VM and Kubernetes prepare revisions together before a cold
-   bootstrap. A healthy legacy rerun may still work; old main is not a cold
-   recovery path.
-4. Ansible prepares AWS runtime and admission, seeds the credential Secret,
-   installs Argo/operators and applies the platform. Check the early
-   `bootstrap-ingress-config` Application at wave -4, its static store and
-   Cloudflare/bouncer ExternalSecrets before foundation. Preserve existing
-   target Secret identities and UIDs during ownership transfer.
+3. Merge the matching VM change and run
+   `make ansible PLAYBOOK=bootstrap-aws-credentials.yml` on each existing
+   cluster. This seed-only entrypoint has no Argo or platform waits. Verify
+   credential Secret identity and key completeness without printing values.
+4. Merge and reconcile Kubernetes prepare, then confirm every live prune
+   protection and record resource/target Secret UIDs before merging transfer.
+   Prepare has empty children and is migration-only. Transfer populates the
+   early static store; check `bootstrap-ingress-config` at wave -4 and actual
+   Cloudflare/bouncer ExternalSecret readiness. Preserve target identities.
 5. Check foundation CA/certificate prerequisites at wave -3, the matching
    public issuer at -2, then JWT AWS configuration/store conditions at -1 and
    apps. Public OIDC and ACME checks must use public DNS. Do not wait on
    Tailscale connectivity, LZ private DNS or whole Traefik pod readiness before
    the issuer. Missing Tailscale credentials do not mean the tailnet is healthy.
-6. Transfer ownership only after the prepare checkpoint is healthy. Restore
-   pruning in cleanup only after the moved resources and unchanged target
-   Secret UIDs are verified. Keep SGF SeaweedFS missing-only seeds separate.
+6. Merge cleanup only after transfer adoption and unchanged target Secret
+   UIDs are verified. Cold bootstrap requires the populated transfer graph or
+   its cleanup successor on main, never the empty prepare graph. Full Ansible
+   bootstrap seeds credentials before installing Argo/operators and platform. Keep SGF SeaweedFS missing-only seeds separate.
 
 Stop at a failed checkpoint. Retry failed IAM or SSM provisioning before
 running dependent bootstrap. If only one credential parameter was written,
